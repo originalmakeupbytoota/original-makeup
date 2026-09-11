@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Original Makeup By Toota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- EmailJS: sends the order email to the shop owner without needing a backend server. -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- Firebase: shared live stock counter, synced across every visitor's device. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --bg: #F7F0EB;
+    --plum: #3D1F2E;
+    --rose: #C4536B;
+    --gold: #D4A574;
+    --ink: #1A1414;
+    --card: #FFFFFF;
+    --line: rgba(61,31,46,0.12);
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: url('imgs\\WhatsApp Image 2026-09-11 at 7.02.34 PM.jpeg') center center / cover no-repeat fixed;
+    color: var(--ink);
+    font-family: 'Tajawal', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,h2,h3, .display{
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  button{ font-family: inherit; }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 24px 6vw;
+    border-bottom: 1px solid var(--line);
+    gap: 14px;
+  }
+  .logo{
+    font-family:'Playfair Display', serif;
+    font-size: 26px;
+    letter-spacing: 0.5px;
+    color: var(--plum);
+  }
+  .header-right{ display:flex; align-items:center; gap: 12px; }
+  .location-pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size: 14px;
+    color: var(--plum);
+    border: 1px solid var(--line);
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--card);
+    cursor:pointer;
+    transition: border-color .2s ease;
+  }
+  .location-pill:hover{ border-color: var(--rose); }
+  .location-pill svg{ width:14px; height:14px; flex-shrink:0; }
+
+  .cart-btn{
+    position: relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--card);
+    cursor: pointer;
+    transition: border-color .2s ease;
+  }
+  .cart-btn:hover{ border-color: var(--rose); }
+  .cart-btn svg{ width: 18px; height: 18px; color: var(--plum); }
+  .cart-count{
+    position:absolute;
+    top: -5px; left: -5px;
+    background: var(--rose);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 0 4px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding: 72px 6vw 56px;
+    max-width: 720px;
+  }
+  .hero .eyebrow{
+    color: black;
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  .hero h1{
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.15;
+    color: black;
+  }
+  .hero p{
+    margin-top: 18px;
+    font-size: 17px;
+    line-height: 1.7;
+    color: black;
+    max-width: 60ch;
+  }
+
+  /* ---------- Product grid ---------- */
+  .section-title{
+    padding: 0 6vw;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom: 28px;
+  }
+  .section-title h2{ font-size: 26px; color: var(--plum); }
+  .section-title span{ font-size: 14px; color: #8A6E7F; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 22px;
+    padding: 0 6vw 80px;
+  }
+
+  .card{
+    background: var(--card);
+    border-radius: 18px;
+    overflow:hidden;
+    border: 1px solid var(--line);
+    transition: transform .25s ease, box-shadow .25s ease;
+    display:flex;
+    flex-direction:column;
+  }
+  .card:hover{
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px rgba(61,31,46,0.10);
+  }
+  .card .photo-wrap{
+    position: relative;
+    height: 190px;
+    overflow: hidden;
+    background: #EFE6DE;
+  }
+  .card .photo-wrap img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter .2s ease, opacity .2s ease;
+  }
+  .card.out-of-stock .photo-wrap img{
+    filter: grayscale(1);
+    opacity: 0.55;
+  }
+  .stock-flag{
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #fff;
+  }
+  .stock-flag.low{ background: var(--gold); color: var(--ink); }
+
+  .card .info{ padding: 16px 18px 20px; display:flex; flex-direction:column; flex:1; }
+  .card .info h3{ font-size: 17px; color: var(--ink); margin-bottom: 6px; }
+  .card .info .desc{
+    font-size: 13.5px;
+    color: #8A6E7F;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .card .info .price{ color: var(--rose); font-weight: 600; font-size: 15px; }
+  .card .info .price-row{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .card .info .was-price{ color:#B5A7AD; font-size:12.5px; text-decoration: line-through; }
+  .card.out-of-stock .info .price{ color: #B5A7AD; }
+  .card .info .badge{
+    display:inline-block;
+    margin-top: 10px;
+    margin-inline-end: 6px;
+    font-size: 12px;
+    color: var(--plum);
+    background: rgba(212,165,116,0.25);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .add-btn{
+    margin-top: 14px;
+    width: 100%;
+    padding: 11px;
+    border-radius: 12px;
+    border: 1.5px solid var(--plum);
+    background: var(--plum);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .18s ease;
+  }
+  .add-btn:hover{ background: #4d2739; }
+  .add-btn:disabled{
+    background: transparent;
+    border-color: var(--line);
+    color: #B5A7AD;
+    cursor: not-allowed;
+  }
+
+  .empty-note{
+    padding: 0 6vw 80px;
+    color: #8A6E7F;
+    font-size: 15px;
+  }
+
+  /* ---------- Modal (location) ---------- */
+  .overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(26,20,20,0.55);
+    backdrop-filter: blur(3px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+    padding: 20px;
+  }
+  .overlay.visible{ opacity: 1; pointer-events: auto; }
+
+  .modal{
+    background: var(--bg);
+    border-radius: 22px;
+    padding: 40px 36px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    transform: scale(0.94) translateY(10px);
+    transition: transform .3s ease;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+  }
+  .overlay.visible .modal{ transform: scale(1) translateY(0); }
+
+  .modal .mark{
+    width: 46px; height: 46px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: var(--rose);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal .mark svg{ width: 20px; height:20px; }
+
+  .modal h2{ font-size: 24px; color: var(--plum); margin-bottom: 10px; }
+  .modal p{ font-size: 14.5px; color: #5B4450; line-height: 1.6; margin-bottom: 26px; }
+
+  .choice{
+    display:block;
+    width: 100%;
+    padding: 15px 18px;
+    margin-bottom: 12px;
+    border-radius: 14px;
+    border: 1.5px solid var(--line);
+    background: var(--card);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 15.5px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .18s ease, background .18s ease;
+  }
+  .choice:hover{ border-color: var(--rose); background: #FFF9F7; }
+  .choice.primary{
+    background: var(--plum);
+    color: #fff;
+    border-color: var(--plum);
+  }
+  .choice.primary:hover{ background: #4d2739; }
+
+  /* ---------- Side drawer (cart) ---------- */
+  .drawer-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(26,20,20,0.5);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+  }
+  .drawer-overlay.visible{ opacity:1; pointer-events:auto; }
+
+  .drawer{
+    position: fixed;
+    top: 0; right: 0;
+    height: 100%;
+    width: min(420px, 100%);
+    background: var(--bg);
+    box-shadow: -20px 0 50px rgba(0,0,0,0.15);
+    transform: translateX(100%);
+    transition: transform .32s ease;
+    display:flex;
+    flex-direction:column;
+    z-index: 201;
+  }
+  .drawer-overlay.visible .drawer{ transform: translateX(0); }
+
+  .drawer-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 24px 24px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .drawer-head h2{ font-size: 21px; color: var(--plum); }
+  .close-x{
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background: var(--card);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--plum);
+    font-size: 16px;
+  }
+
+  .drawer-body{ flex:1; overflow-y:auto; padding: 18px 24px; }
+  .cart-empty{ color:#8A6E7F; font-size:14.5px; text-align:center; margin-top: 60px; }
+
+  .cart-item{
+    display:flex;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cart-item img{
+    width: 64px; height: 64px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink:0;
+  }
+  .cart-item-info{ flex:1; min-width:0; }
+  .cart-item-info h4{ font-size: 14.5px; margin:0 0 4px; color: var(--ink); }
+  .cart-item-info .unit-price{ font-size: 12.5px; color: #8A6E7F; }
+  .qty-row{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .qty-btn{
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    cursor: pointer;
+    font-size: 15px;
+    line-height:1;
+    color: var(--plum);
+  }
+  .qty-num{ font-size: 14px; min-width: 18px; text-align:center; }
+  .remove-link{
+    background:none; border:none; color: var(--rose);
+    font-size: 12.5px; cursor:pointer; padding:0; margin-inline-start: auto;
+    text-decoration: underline;
+  }
+  .item-total{ font-size: 14px; font-weight:600; color: var(--plum); white-space:nowrap; }
+
+  .drawer-foot{
+    padding: 20px 24px 26px;
+    border-top: 1px solid var(--line);
+  }
+  .row{ display:flex; justify-content:space-between; font-size: 14.5px; margin-bottom: 8px; color:#5B4450; }
+  .row.total{ font-size: 17px; font-weight:700; color: var(--plum); margin-top: 10px; }
+
+  .btn-block{
+    display:block;
+    width:100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    background: var(--plum);
+    color:#fff;
+    font-size: 15.5px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top: 14px;
+    transition: background .18s ease;
+  }
+  .btn-block:hover{ background:#4d2739; }
+  .btn-block:disabled{ background:#C9BDC2; cursor:not-allowed; }
+
+  /* ---------- Checkout modal ---------- */
+  .checkout-modal{
+    background: var(--bg);
+    border-radius: 22px;
+    padding: 34px 30px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    text-align: right;
+    transform: scale(0.96) translateY(10px);
+    transition: transform .3s ease;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+  }
+  .overlay.visible .checkout-modal{ transform: scale(1) translateY(0); }
+  .checkout-modal h2{ font-size: 22px; color: var(--plum); margin-bottom: 18px; text-align:center; }
+
+  .field{ margin-bottom: 16px; }
+  .field label{ display:block; font-size: 13.5px; color: #5B4450; margin-bottom: 6px; }
+  .field input, .field textarea{
+    width:100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    background: var(--card);
+    font-family: inherit;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+  .field input:focus, .field textarea:focus{ outline: 2px solid var(--rose); outline-offset: 1px; }
+  .field textarea{ resize: vertical; min-height: 64px; }
+  .field-row{ display:flex; gap: 12px; }
+  .field-row .field{ flex:1; }
+
+  .summary-box{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin: 18px 0;
+  }
+
+  .payment-note{
+    background: rgba(212,165,116,0.18);
+    border: 1px solid rgba(212,165,116,0.5);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #5B4023;
+    margin-bottom: 16px;
+  }
+  .payment-note strong{ color: var(--plum); }
+
+  .policy-check{
+    display:flex;
+    align-items:flex-start;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #5B4450;
+    margin-bottom: 6px;
+  }
+  .policy-check input{ margin-top: 3px; flex-shrink:0; width:16px; height:16px; }
+
+  .form-error{
+    color: var(--rose);
+    font-size: 13px;
+    margin-top: 10px;
+    display:none;
+  }
+  .form-error.visible{ display:block; }
+
+  /* ---------- Confirmation modal ---------- */
+  .confirm-modal{
+    background: var(--bg);
+    border-radius: 22px;
+    padding: 42px 34px;
+    max-width: 420px;
+    width: 100%;
+    text-align:center;
+  }
+  .confirm-modal .mark{
+    width: 54px; height:54px;
+    border-radius:50%;
+    background: #4C8B6D;
+    display:flex; align-items:center; justify-content:center;
+    margin: 0 auto 18px;
+  }
+  .confirm-modal .mark svg{ width:24px; height:24px; }
+  .confirm-modal h2{ font-size: 23px; color: var(--plum); margin-bottom: 10px; }
+  .confirm-modal p{ font-size: 14.5px; color:#5B4450; line-height:1.7; margin-bottom: 6px; }
+  .order-id{
+    font-family:'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--rose);
+    margin: 14px 0;
+  }
+
+  footer{
+    padding: 32px 6vw 40px;
+    border-top: 1px solid var(--line);
+    color: #8A6E7F;
+    font-size: 13.5px;
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Original Makeup By Toota</div>
+  <div class="header-right">
+    <div class="location-pill" id="locationPill" onclick="openLocationModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <span id="locationLabel">Select Location</span>
+    </div>
+    <button class="cart-btn" onclick="openCart()" aria-label="Shopping Cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="cart-count" id="cartCount" style="display:none;">0</span>
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Carefully Curated Makeup</div>
+  <h1>Your Beauty, Your Way</h1>
+  <p>Makeup with a pure finish and colors that last, chosen to suit every skin. Pick your location so we can show you what's actually available near you.</p>
+</section>
+
+<div class="section-title">
+  <h2 id="gridTitle">All Products</h2>
+  <span id="gridCount"></span>
+</div>
+
+<div class="grid" id="productGrid"></div>
+<p class="empty-note" id="emptyNote" style="display:none;">No additional products are available for your area right now — stay tuned for more soon.</p>
+
+<footer>Original Makeup By Toota © 2026 — Delivery within Cairo &amp; Giza and select other areas</footer>
+
+<!-- Location modal -->
+<div class="overlay" id="locationOverlay">
+  <div class="modal">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    </div>
+    <h2>Where would you like delivery?</h2>
+    <p>We'll show you what's actually available in your area</p>
+    <button class="choice primary" onclick="selectLocation('cairo_giza')">Cairo &amp; Giza</button>
+    <button class="choice" onclick="selectLocation('other')">Other Areas</button>
+  </div>
+</div>
+
+<!-- Cart drawer -->
+<div class="drawer-overlay" id="cartOverlay">
+  <div class="drawer">
+    <div class="drawer-head">
+      <h2>Shopping Cart</h2>
+      <button class="close-x" onclick="closeCart()">✕</button>
+    </div>
+    <div class="drawer-body" id="cartBody"></div>
+    <div class="drawer-foot" id="cartFoot" style="display:none;">
+      <div class="row"><span>Total</span><span id="cartSubtotal">0 EGP</span></div>
+      <button class="btn-block" onclick="goToCheckout()">Checkout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Checkout modal -->
+<div class="overlay" id="checkoutOverlay">
+  <div class="checkout-modal">
+    <h2>Delivery Details</h2>
+
+    <div class="field">
+      <label for="custName">Full Name</label>
+      <input type="text" id="custName" placeholder="e.g. Sarah Ahmed">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="custEmail">Email Address</label>
+        <input type="email" id="custEmail" placeholder="name@example.com">
+      </div>
+      <div class="field">
+        <label for="custPhone">Mobile Number</label>
+        <input type="tel" id="custPhone" placeholder="01xxxxxxxxx">
+      </div>
+    </div>
+    <div class="field">
+      <label for="custAddress">Full Address</label>
+      <textarea id="custAddress" placeholder="Governorate, area, street, building/floor number..."></textarea>
+    </div>
+    <div class="field">
+      <label for="custNotes">Additional Notes (optional)</label>
+      <textarea id="custNotes" placeholder="Any details that would help with delivery"></textarea>
+    </div>
+
+    <div class="summary-box" id="checkoutSummary"></div>
+
+    <div class="payment-note">
+      <strong>Payment Method:</strong> Cash on delivery only.<br>
+      A <strong>50% deposit</strong> of the total order is required upfront to confirm your booking, with the remaining 50% paid in cash on delivery. We'll contact you by phone to collect the deposit after you submit your order.
+    </div>
+
+    <label class="policy-check">
+      <input type="checkbox" id="policyCheckbox" onchange="toggleConfirmBtn()">
+      <span>I agree to the payment policy: a 50% deposit of the order value is paid upfront, with the remainder paid in cash on delivery.</span>
+    </label>
+
+    <div class="form-error" id="formError">Please complete all fields and agree to the payment policy.</div>
+
+    <button class="btn-block" id="confirmOrderBtn" disabled onclick="submitOrder()">Confirm Order</button>
+    <button class="choice" style="margin-top:10px;" onclick="closeCheckout()">Back to Cart</button>
+  </div>
+</div>
+
+<!-- Confirmation modal -->
+<div class="overlay" id="confirmOverlay">
+  <div class="confirm-modal">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <h2>Your order has been received!</h2>
+    <p>We'll contact you soon to confirm the deposit and shipping date.</p>
+    <div class="order-id" id="orderIdDisplay"></div>
+    <p id="confirmDepositText"></p>
+    <button class="btn-block" onclick="closeConfirm()">Got it</button>
+  </div>
+</div>
+
+<script>
+  /* =========================================================
+     EMAILJS SETUP — required for the order email to actually send.
+     1) Create a free account at https://www.emailjs.com
+     2) Add an Email Service (connect your Gmail/Outlook/etc.)
+     3) Create an Email Template with these variable names so they
+        match what this code sends:
+        {{order_id}} {{customer_name}} {{customer_email}} {{customer_phone}}
+        {{customer_address}} {{customer_notes}} {{location}} {{items_list}}
+        {{subtotal}} {{deposit_amount}} {{remaining_amount}}
+     4) Replace the three placeholders below with your own IDs
+        (found in your EmailJS dashboard).
+     ========================================================= */
+  const EMAILJS_PUBLIC_KEY  = "Spz2gCOC9Jt6EPJuS";
+  const EMAILJS_SERVICE_ID  = "service_ef1kasp";
+  const EMAILJS_TEMPLATE_ID = "template_gp28aow";
+  if (window.emailjs) emailjs.init(EMAILJS_PUBLIC_KEY);
+
+  const DEPOSIT_RATE = 0.5; // 50% deposit — change here if the policy changes
+
+  // ---- Product data ----
+  // EDIT THIS LIST for your real catalog:
+  //   name          -> product name
+  //   price         -> number only (no text), e.g. 285
+  //   description   -> one short line, shown under the name
+  //   color         -> used for the placeholder image background
+  //   image         -> set to your own photo URL (or local file like "images/lipstick1.jpg")
+  //                    once you upload real product photos; leave as-is for a placeholder.
+  //   quantity      -> your TOTAL stock on hand, ever. Units sold are tracked separately
+  //                    (see "Stock tracking" below) and never reset automatically.
+  //                    TO RESTOCK: just raise this number by however many new units
+  //                    arrived — the site subtracts total units sold from it automatically,
+  //                    so you never need to touch the sold count. Only you can do this,
+  //                    by editing this file — there is no in-site or URL-based way to do it.
+  //   shipAnywhere  -> true  = shows for BOTH "Cairo & Giza" AND "Other Areas".
+  //                     false = shows ONLY for "Cairo & Giza" (hidden for "Other Areas").
+  //                     Everything always shows under "Cairo & Giza" no matter what.
+  //                     TO CHANGE WHO SEES A PRODUCT: just flip this true/false for that item.
+  const products = [
+    { id: 1, name: "Huda Beauty Liquid Blush", description: "Liquid blush in the Cotton Candy shade.", price: 1900, originalPrice: 2300, color: "C4536B", quantity: 1, shipAnywhere: false , image:"imgs\\Huda Beauty Liquid Blush.jpeg" },
+    { id: 2, name: "Saie Dewy Blush", description: "Dewy, second-skin blush in the Chilly shade.", price: 1600, originalPrice: 2200, color: "E8A2A8", quantity: 1, shipAnywhere: false , image:"imgs\\Saie dewy blush.jpeg" },
+    { id: 3, name: "Fenty Beauty Gloss Bomb Stix", description: "High-shine gloss stick in the Hi'Biscus shade.", price: 2500, color: "D9607A", quantity: 1, shipAnywhere: false , image:"imgs\\Fenty Beauty gloss bomb.jpeg" },
+    { id: 4, name: "Rhode Pocket Blush", description: "Cream blush in the Sleepy Girl shade, in Rhode's pocket-size compact.", price: 2300, color: "E6A4B4", quantity: 1, shipAnywhere: true , image:"imgs\\sleepy girl.jpeg" },
+    { id: 6, name: "Rhode Pocket Blush", description: "Cream blush in the Spicy Marg shade, in Rhode's pocket-size compact.", price: 2100, originalPrice: 2300, color: "D96B5A", quantity: 1, shipAnywhere: true , image:"imgs\\spicy marg.jpeg" },
+    { id: 7, name: "Rhode Pocket Blush", description: "Cream blush in the Juice Box shade, in Rhode's pocket-size compact.", price: 2100, originalPrice: 2300, color: "E0857A", quantity: 1, shipAnywhere: true , image:"imgs\\juice box.jpeg" },
+    { id: 30, name: "Rhode Pocket Blush", description: "Cream blush in the Toasted Teddy shade, in Rhode's pocket-size compact.", price: 2100, originalPrice: 2300, color: "C97064", quantity: 1, shipAnywhere: true , image:"imgs\\toasted teddy.jpeg" }, 
+    { id: 8, name: "Rhode Pocket Blush", description: "Cream blush in the Freckle shade, in Rhode's pocket-size compact.", price: 2300, color: "D8A28A", quantity: 1, shipAnywhere: true , image:"imgs\\freckle.jpeg" },
+    { id: 9, name: "e.l.f. Camo Blush", description: "Buildable cream blush in the Coral Crush shade.", price: 950, color: "E8836B", quantity: 1, shipAnywhere: false , image:"imgs\\coral crush.jpeg" },
+    { id: 31, name: "NARS Powder Blush", description: "Powder blush in the O Edge shade. \n Note: The product has a tiny dent.", price: 1600, originalPrice: 2600, color: "C97A85", quantity: 1, shipAnywhere: false , image:"imgs\\o edge.jpeg" },
+    { id: 11, name: "Benefit Pocket Pal", description: "Travel-size blush in the Original Rose shade.", price: 2000, originalPrice: 2885, color: "D9919E", quantity: 1, shipAnywhere: false , image:"imgs\\original rose.jpeg" },
+    { id: 12, name: "Sephora Collection 04 Brush", description: "Makeup brush, Sephora Collection style 04.", price: 1200, originalPrice: 1500, color: "8C6E5E", quantity: 1, shipAnywhere: false , image:"imgs\\Sephora collection 04 brush.jpeg" },
+    { id: 2990, name: "F4 makeup by mario brush", description: "Makeup brush, Makeup by Mario F4.", price: 2800, originalPrice: 3600, color: "C08497", quantity: 1, shipAnywhere: true , image:"imgs\\F4.jpeg" },
+    { id: 13, name: "Saie Mini Glow Gel", description: "Mini dewy highlighter gel in the Sunglow shade.", price: 1100, originalPrice: 1600, color: "F0C1A0", quantity: 1, shipAnywhere: false , image:"imgs\\sunglow.jpeg" },
+    { id: 14, name: "Huda Beauty Lip Gloss", description: "High-shine lip gloss in the Bombshell shade.", price: 1800, originalPrice: 2300, color: "B8465B", quantity: 1, shipAnywhere: false , image:"imgs\\bombshell.jpeg" },
+    { id: 15, name: "Summer Fridays Lip Balm", description: "Hydrating lip balm in the Pink Guava tint.", price: 1200, originalPrice: 2400, color: "E8A8A0", quantity: 1, shipAnywhere: false , image:"imgs\\pink guava.jpeg" },
+    { id: 16, name: "Summer Fridays Lip Balm", description: "Hydrating lip balm in the Vanilla tint.", price: 1200, originalPrice: 2400, color: "EADFD3", quantity: 1, shipAnywhere: false , image:"imgs\\vanilla.jpeg" },
+    { id: 17, name: "Summer Fridays Lip Balm", description: "Hydrating lip balm in the Pink Sugar tint.", price: 1500, originalPrice: 2400, color: "EFC6CE", quantity: 1, shipAnywhere: false , image:"imgs\\pink sugar.jpeg" },
+    { id: 18, name: "Sephora Collection Size Up Mascara", description: "Volumizing mascara, Sephora Collection Size Up.", price: 1400, originalPrice: 1800, color: "1A1414", quantity: 1, shipAnywhere: false , image:"imgs\\Sephora collection Size up mascara.jpeg" },
+    { id: 19, name: "Anastasia Mini Brow Gel", description: "Mini-size tinted brow gel.", price: 1100, originalPrice: 1200, color: "4A2E22", quantity: 1, shipAnywhere: false , image:"imgs\\Anastasia mini brow gel.jpeg" },
+    { id: 20, name: "Fenty Beauty Lip Gloss", description: "High-shine lip gloss in the Fenty Glow Fantasy shade.", price: 1800, color: "D97A9A", quantity: 1, shipAnywhere: false , image:"imgs\\fenty glow fantasy.jpeg" },
+    { id: 21, name: "Fenty Beauty Lip Liner", description: "Precision lip liner in the Extra Thigh shade.", price: 1600, originalPrice: 2100, color: "A85D5D", quantity: 1, shipAnywhere: false , image:"imgs\\extra thigh.jpeg" },
+    { id: 22, name: "Mini Kayali Perfume", description: "Travel-size perfume in the Yum Pistachio Gelato scent.", price: 1600, originalPrice: 2500, color: "B7C9A8", quantity: 1, shipAnywhere: false , image:"imgs\\yum pistachio gelato.jpeg" },
+    { id: 23, name: "Charlotte Tilbury Pillow Talk Fair Set", description: "Coordinated makeup set in the Pillow Talk Fair shade family.", price: 2000, originalPrice: 2900, color: "D8B4A0", quantity: 1, shipAnywhere: false , image:"imgs\\Charlotte tillbury pillow talk.jpeg" },
+    { id: 24, name: "Tarte Shape Tape Concealer", description: "Full coverage concealer in shade 16N Fair Light Neutral.", price: 1600, originalPrice: 2100, color: "C89A78", quantity: 1, shipAnywhere: false , image:"imgs\\16N fair light neutral.jpeg" },
+    { id: 25, name: "Pink Lovers Set", description: "Includes full-size Saie blush (Chilly), full-size Huda Beauty lip gloss (Bombshell), full-size Summer Fridays lip balm (Pink Guava), and full-size Fenty Beauty gloss stix (shade 05).", price: 5000, color: "E6A4B4", quantity: 1, shipAnywhere: false , image:"imgs\\Pink lovers.jpeg" },
+    { id: 26, name: "Full Glam Set", description: "Includes full-size Size Up mascara, full-size Rhode pocket blush (Toasted Teddy), full-size Fenty Beauty gloss (Glow Fantasy), mini Kayali perfume (Yum Pistachio Gelato), mini Fenty Beauty lip liner (Extra Thigh), and mini Anastasia brow gel.", price: 7000, color: "C4536B", quantity: 1, shipAnywhere: false , image:"imgs\\Full glam.jpeg" },
+    { id: 27, name: "Mix and Match Set", description: "Includes full-size e.l.f. Camo blush (Coral Crush), Sephora Collection 04 brush, full-size Summer Fridays lip balm (Vanilla), mini lip liner (Pillow Talk Fair), mini lipstick (Pillow Talk Fair), and mini Saie glow gel (Sunglow).", price: 3900, color: "D9A57B", quantity: 1, shipAnywhere: false , image:"imgs\\Mix and match.jpeg" },
+    { id: 28, name: "Huda Beauty Lovers Set", description: "Includes 2 full-size liquid blushes (Cotton Candy & Intense Guava), full-size One Coat Wow mascara, full-size lip stain (Cherry Red), and full-size powder blush (Roseberry).", price: 7600, color: "B8465B", quantity: 1, shipAnywhere: true , image:"imgs\\Huda beauty lovers.jpeg" },
+    { id: 299, name: "NyX Huda Beauty Set", description: "Includes 2 full-size Huda Beauty liquid blushes (Ube Cream & Intense Guava), NYX Smushy, NYX Jelly Job, and NYX Fat Cheeks.", price: 4200, color: "C08497", quantity: 1, shipAnywhere: true , image:"imgs\\nyXhudabeauty.jpeg" },
+  ];
+
+  // Auto-generated placeholder image per product (swap `image:` in the object above to override).
+  products.forEach(p => {
+    if (!p.image){
+      const label = encodeURIComponent(p.name.split(' ').slice(0,2).join(' '));
+      p.image = `https://placehold.co/500x500/${p.color}/ffffff?font=playfair-display&text=${label}`;
+    }
+  });
+
+  /* =========================================================
+     FIREBASE SETUP — required so stock counts sync across every
+     visitor's device instead of just this browser.
+     1) Go to https://console.firebase.google.com and create a
+        free project.
+     2) In the left menu: Build → Realtime Database → Create Database
+        (choose any region; start in "test mode" for now).
+     3) In Project Settings → General, scroll to "Your apps",
+        click the web icon (</>) to register a web app, and copy
+        the firebaseConfig object it gives you.
+     4) Paste your values into the object below.
+     5) In Realtime Database → Rules, set:
+          { "rules": { "sold": { ".read": true , image:"", ".write": true , image:"" } } }
+        This keeps everything else private but lets the site read/write
+        just the stock counters. Note: because there's no server here,
+        these counters aren't protected from someone editing them via
+        their browser console — fine for casual use, but if that ever
+        becomes a real concern, that's the point to add a small backend.
+     ========================================================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDjVNn6V73gfqmEM8LZI-W6zMdo3WLm0aQ",
+    databaseURL: "https://anything-e300d-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "anything-e300d",
+  };
+  const FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
+
+  /* ---------- Stock tracking ----------
+     Units sold live in Firebase (or local storage as a fallback) and are
+     never cleared automatically — only editing `quantity` above changes
+     what's available. This is intentional: no visitor, and no URL, can
+     reset or tamper with stock — only you, by editing this file. */
+  let sold = JSON.parse(localStorage.getItem('lamsa_sold') || '{}'); // local fallback until Firebase is set up
+  let soldRef = null;
+
+  if (FIREBASE_CONFIGURED && window.firebase){
+    firebase.initializeApp(firebaseConfig);
+    soldRef = firebase.database().ref('sold');
+    // Live sync: any device's order updates every other open tab/device instantly.
+    soldRef.on('value', snapshot => {
+      sold = snapshot.val() || {};
+      renderProducts();
+      if (document.getElementById('cartOverlay').classList.contains('visible')) renderCart();
+    });
+  } else {
+    console.warn('Firebase is not configured yet — stock is only tracked on this browser for now.');
+  }
+
+  function saveSold(soldDelta){
+    // soldDelta: { [productId]: unitsJustSold }
+    if (soldRef){
+      Object.entries(soldDelta).forEach(([id, qty]) => {
+        soldRef.child(id).transaction(current => (current || 0) + qty);
+      });
+    } else {
+      Object.entries(soldDelta).forEach(([id, qty]) => {
+        sold[id] = (sold[id] || 0) + qty;
+      });
+      localStorage.setItem('lamsa_sold', JSON.stringify(sold));
+    }
+  }
+
+  function available(product){
+    return Math.max(0, product.quantity - (sold[product.id] || 0));
+  }
+
+  let currentLocation = null;
+
+  // Cart persists in this browser via localStorage: { [productId]: qty }
+  let cart = JSON.parse(localStorage.getItem('lamsa_cart') || '{}');
+
+  function saveCart(){
+    localStorage.setItem('lamsa_cart', JSON.stringify(cart));
+    updateCartBadge();
+  }
+
+  function formatPrice(n){ return n.toLocaleString('en-US') + ' EGP'; }
+
+  /* ---------- Location modal ---------- */
+  function openLocationModal(){ document.getElementById('locationOverlay').classList.add('visible'); }
+  function closeLocationModal(){ document.getElementById('locationOverlay').classList.remove('visible'); }
+
+  function selectLocation(loc){
+    currentLocation = loc;
+    document.getElementById('locationLabel').textContent =
+      loc === 'cairo_giza' ? 'Cairo & Giza' : 'Other Areas';
+    renderProducts();
+    closeLocationModal();
+  }
+
+  /* ---------- Product grid ---------- */
+  function renderProducts(){
+    const list = currentLocation === 'other'
+      ? products.filter(p => p.shipAnywhere)
+      : products;
+
+    const grid = document.getElementById('productGrid');
+    const title = document.getElementById('gridTitle');
+    const count = document.getElementById('gridCount');
+    const emptyNote = document.getElementById('emptyNote');
+
+    title.textContent = currentLocation === 'other' ? 'Products Available in Your Area' : 'All Products';
+    count.textContent = list.length + ' products';
+    emptyNote.style.display = list.length === 0 ? 'block' : 'none';
+
+    grid.innerHTML = list.map(p => {
+      const stock = available(p);
+      const outOfStock = stock <= 0;
+      const lowStock = !outOfStock && stock <= 5;
+      return `
+      <div class="card ${outOfStock ? 'out-of-stock' : ''}">
+        <div class="photo-wrap">
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          ${outOfStock ? '<span class="stock-flag">Out of Stock</span>' : ''}
+          ${lowStock ? `<span class="stock-flag low">Only ${stock} left</span>` : ''}
+        </div>
+        <div class="info">
+          <h3>${p.name}</h3>
+          <p class="desc">${p.description}</p>
+          <div class="price-row">
+            ${p.originalPrice ? `<span class="was-price">${formatPrice(p.originalPrice)}</span>` : ''}
+            <div class="price">${formatPrice(p.price)}</div>
+          </div>
+          ${currentLocation === 'other' ? '<span class="badge">Available for delivery</span>' : ''}
+          <button class="add-btn" ${outOfStock ? 'disabled' : ''} onclick="addToCart(${p.id})">
+            ${outOfStock ? 'Unavailable' : 'Add to Cart'}
+          </button>
+        </div>
+      </div>
+    `;
+    }).join('');
+  }
+
+  /* ---------- Cart logic ---------- */
+  function addToCart(id){
+    const product = products.find(p => p.id === id);
+    if (!product || available(product) <= 0) return;
+    const currentQty = cart[id] || 0;
+    if (currentQty >= available(product)) return; // clamp to stock
+    cart[id] = currentQty + 1;
+    saveCart();
+    renderCart();
+  }
+
+  function changeQty(id, delta){
+    const product = products.find(p => p.id === id);
+    const newQty = (cart[id] || 0) + delta;
+    if (newQty <= 0){ delete cart[id]; }
+    else if (newQty > available(product)){ return; } // can't exceed stock
+    else { cart[id] = newQty; }
+    saveCart();
+    renderCart();
+  }
+
+  function removeFromCart(id){
+    delete cart[id];
+    saveCart();
+    renderCart();
+  }
+
+  function getCartItems(){
+    return Object.entries(cart).map(([id, qty]) => {
+      const product = products.find(p => p.id === Number(id));
+      return product ? { product, qty } : null;
+    }).filter(Boolean);
+  }
+
+  function getCartTotal(){
+    return getCartItems().reduce((sum, { product, qty }) => sum + product.price * qty, 0);
+  }
+
+  function updateCartBadge(){
+    const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
+    const badge = document.getElementById('cartCount');
+    badge.textContent = totalItems;
+    badge.style.display = totalItems > 0 ? 'flex' : 'none';
+  }
+
+  function openCart(){
+    renderCart();
+    document.getElementById('cartOverlay').classList.add('visible');
+  }
+  function closeCart(){ document.getElementById('cartOverlay').classList.remove('visible'); }
+
+  function renderCart(){
+    const items = getCartItems();
+    const body = document.getElementById('cartBody');
+    const foot = document.getElementById('cartFoot');
+
+    if (items.length === 0){
+      body.innerHTML = '<p class="cart-empty">Your cart is empty</p>';
+      foot.style.display = 'none';
+      return;
+    }
+
+    body.innerHTML = items.map(({ product, qty }) => `
+      <div class="cart-item">
+        <img src="${product.image}" alt="${product.name}">
+        <div class="cart-item-info">
+          <h4>${product.name}</h4>
+          <div class="unit-price">${formatPrice(product.price)} / item</div>
+          <div class="qty-row">
+            <button class="qty-btn" onclick="changeQty(${product.id}, -1)">−</button>
+            <span class="qty-num">${qty}</span>
+            <button class="qty-btn" onclick="changeQty(${product.id}, 1)">+</button>
+            <button class="remove-link" onclick="removeFromCart(${product.id})">Remove</button>
+          </div>
+        </div>
+        <div class="item-total">${formatPrice(product.price * qty)}</div>
+      </div>
+    `).join('');
+
+    foot.style.display = 'block';
+    document.getElementById('cartSubtotal').textContent = formatPrice(getCartTotal());
+  }
+
+  /* ---------- Checkout ---------- */
+  function goToCheckout(){
+    if (getCartItems().length === 0) return;
+    closeCart();
+    renderCheckoutSummary();
+    document.getElementById('checkoutOverlay').classList.add('visible');
+  }
+  function closeCheckout(){ document.getElementById('checkoutOverlay').classList.remove('visible'); }
+
+  function renderCheckoutSummary(){
+    const items = getCartItems();
+    const subtotal = getCartTotal();
+    const deposit = Math.round(subtotal * DEPOSIT_RATE);
+    const remaining = subtotal - deposit;
+
+    const linesHtml = items.map(({ product, qty }) =>
+      `<div class="row"><span>${product.name} × ${qty}</span><span>${formatPrice(product.price * qty)}</span></div>`
+    ).join('');
+
+    document.getElementById('checkoutSummary').innerHTML = `
+      ${linesHtml}
+      <div class="row total"><span>Total</span><span>${formatPrice(subtotal)}</span></div>
+      <div class="row"><span>Deposit Required (50%)</span><span>${formatPrice(deposit)}</span></div>
+      <div class="row"><span>Remaining on Delivery</span><span>${formatPrice(remaining)}</span></div>
+    `;
+  }
+
+  function toggleConfirmBtn(){
+    document.getElementById('confirmOrderBtn').disabled = !document.getElementById('policyCheckbox').checked;
+  }
+
+  function generateOrderId(){
+    return 'LMS-' + Date.now().toString().slice(-6);
+  }
+
+  function submitOrder(){
+    const name = document.getElementById('custName').value.trim();
+    const email = document.getElementById('custEmail').value.trim();
+    const phone = document.getElementById('custPhone').value.trim();
+    const address = document.getElementById('custAddress').value.trim();
+    const notes = document.getElementById('custNotes').value.trim();
+    const policyAccepted = document.getElementById('policyCheckbox').checked;
+    const errorEl = document.getElementById('formError');
+
+    if (!name || !email || !phone || !address || !policyAccepted){
+      errorEl.classList.add('visible');
+      return;
+    }
+    errorEl.classList.remove('visible');
+
+    const items = getCartItems();
+    const subtotal = getCartTotal();
+    const deposit = Math.round(subtotal * DEPOSIT_RATE);
+    const remaining = subtotal - deposit;
+    const orderId = generateOrderId();
+
+    const itemsList = items.map(({ product, qty }) =>
+      `${product.name} × ${qty} = ${formatPrice(product.price * qty)}`
+    ).join('\n');
+
+    const templateParams = {
+      order_id: orderId,
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone,
+      customer_address: address,
+      customer_notes: notes || '—',
+      location: currentLocation === 'cairo_giza' ? 'Cairo & Giza' : 'Other Areas',
+      items_list: itemsList,
+      subtotal: formatPrice(subtotal),
+      deposit_amount: formatPrice(deposit),
+      remaining_amount: formatPrice(remaining),
+    };
+
+    const confirmBtn = document.getElementById('confirmOrderBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Sending...';
+
+    const finishUp = () => {
+      // Record the sold units (synced via Firebase if configured, else local storage) and clear the cart
+      const soldDelta = {};
+      items.forEach(({ product, qty }) => { soldDelta[product.id] = qty; });
+      saveSold(soldDelta);
+      cart = {};
+      saveCart();
+      renderProducts();
+
+      closeCheckout();
+      document.getElementById('orderIdDisplay').textContent = orderId;
+      document.getElementById('confirmDepositText').textContent =
+        `Deposit required: ${formatPrice(deposit)} — remaining ${formatPrice(remaining)} on delivery.`;
+      document.getElementById('confirmOverlay').classList.add('visible');
+
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Confirm Order';
+      ['custName','custEmail','custPhone','custAddress','custNotes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('policyCheckbox').checked = false;
+    };
+
+    if (window.emailjs && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY"){
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+        .then(finishUp)
+        .catch(err => {
+          console.error('EmailJS error:', err);
+          errorEl.textContent = 'There was a problem sending your order. Please try again or contact us directly.';
+          errorEl.classList.add('visible');
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm Order';
+        });
+    } else {
+      // EmailJS not configured yet — still complete the order locally so testing works end-to-end.
+      console.warn('EmailJS is not configured yet. Order details:', templateParams);
+      finishUp();
+    }
+  }
+
+  function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('visible'); }
+
+  // Show location popup automatically on load
+  window.addEventListener('load', () => {
+    renderProducts();
+    updateCartBadge();
+    setTimeout(openLocationModal, 300);
+  });
+</script>
+
+</body>
+</html>
